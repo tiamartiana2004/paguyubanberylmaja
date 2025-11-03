@@ -23,8 +23,7 @@ const StatCard: React.FC<{ title: string; value: string | number; icon: string }
 );
 
 const calculateAge = (birthDateString: string): number => {
-    // FIX: Add guards for invalid or missing birthDateString to prevent NaN results from arithmetic operations.
-    if (!birthDateString) {
+    if (!birthDateString || !/^\d{4}-\d{2}-\d{2}$/.test(birthDateString)) {
         return 0;
     }
     const birthDate = new Date(birthDateString);

@@ -49,6 +49,14 @@ const WargaList: React.FC<WargaListProps> = ({ wargaList, keluargaList, onCreate
     return keluarga ? `${keluarga.nomorKK} - ${keluarga.kepalaKeluarga}` : 'N/A';
   }
 
+  const calculateStayDuration = (createdAt: string) => {
+    const createdAtDate = new Date(createdAt);
+    const today = new Date();
+    const diffTime = Math.abs(today.getTime() - createdAtDate.getTime());
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    return `${diffDays} hari`;
+  };
+
   return (
     <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
       <div className="flex flex-col sm:flex-row justify-between items-center mb-4 gap-4">
@@ -78,6 +86,8 @@ const WargaList: React.FC<WargaListProps> = ({ wargaList, keluargaList, onCreate
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Nama Lengkap</th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">NIK</th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Keluarga</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Tanggal Lahir</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Lama Tinggal</th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Status</th>
               <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Aksi</th>
             </tr>
@@ -88,6 +98,8 @@ const WargaList: React.FC<WargaListProps> = ({ wargaList, keluargaList, onCreate
                 <td className="px-6 py-4 whitespace-nowrap">{warga.namaLengkap}</td>
                 <td className="px-6 py-4 whitespace-nowrap">{warga.nik}</td>
                 <td className="px-6 py-4 whitespace-nowrap">{getKeluargaInfo(warga.keluargaId)}</td>
+                <td className="px-6 py-4 whitespace-nowrap">{warga.tanggalLahir}</td>
+                <td className="px-6 py-4 whitespace-nowrap">{calculateStayDuration(warga.created_at)}</td>
                 <td className="px-6 py-4 whitespace-nowrap">
                   <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${warga.statusHidup ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
                     {warga.statusHidup ? 'Aktif' : 'Tidak Aktif'}
