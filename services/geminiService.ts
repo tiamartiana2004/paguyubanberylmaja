@@ -1,21 +1,24 @@
 // services/geminiService.ts
 
-import { GoogleGenAI } from "@google/genai";
+import { GoogleGenerativeAI } from "@google/generative-ai";
 import { Warga, Keluarga, Iuran } from '../types';
 
-// Menggunakan import.meta.env sesuai standar Vite untuk mengakses environment variable
 const API_KEY = import.meta.env.VITE_GEMINI_API_KEY;
 
-if (!API_KEY) {
+let genAI: GoogleGenerativeAI | null = null;
+if (API_KEY) {
+  try {
+    genAI = new GoogleGenerativeAI(API_KEY);
+  } catch (error) {
+    console.error("Failed to initialize GoogleGenerativeAI:", error);
+  }
+} else {
   console.warn("API_KEY for Gemini is not set. AI features will be disabled.");
 }
 
-// Inisialisasi klien GenAI hanya jika API_KEY ada
-const ai = API_KEY ? new GoogleGenAI({ apiKey: API_KEY }) : null;
-
 export const generatePopulationSummary = async (wargaList: Warga[], keluargaList: Keluarga[], iuranList: Iuran[]): Promise<string> => {
-  if (!ai) {
-    return Promise.resolve("Fitur AI tidak aktif. Mohon konfigurasikan VITE_GEMINI_API_KEY di file .env.local Anda.");
+  if (!genAI) {
+    return "Fitur AI tidak aktif karena kunci API tidak dikonfigurasi atau tidak valid.";
   }
   
   const model = 'gemini-1.5-flash'; // Menggunakan model terbaru yang efisien
@@ -58,13 +61,15 @@ export const generatePopulationSummary = async (wargaList: Warga[], keluargaList
   `;
 
   try {
-    const response = await ai.models.generateContent({
-      model: model,
-      contents: [{ role: "user", parts: [{ text: prompt }] }],
-    });
-    return response.text;
+    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+    const result = await model.generateContent(prompt);
+    const response = await result.response;
+    return response.text();
   } catch (error) {
     console.error("Error calling Gemini API:", error);
-    return "Terjadi kesalahan saat membuat ringkasan AI. Silakan coba lagi.";
+    if (error instanceof Error) {
+      return `Terjadi kesalahan saat memanggil API: ${error.message}`;
+    }
+    return "Terjadi kesalahan yang tidak diketahui saat membuat ringkasan AI.";
   }
 };
