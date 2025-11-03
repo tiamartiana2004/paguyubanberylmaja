@@ -15,6 +15,7 @@ import Login from './components/Login';
 import { AuthContext } from './contexts/AuthContext';
 import PublicWargaList from './components/PublicWargaList';
 import PublicIuran from './components/PublicIuran';
+import PengurusList from './components/PengurusList'; // IMPOR BARU
 
 const App: React.FC = () => {
   const [view, setView] = useState<View>(View.PUBLIC_DASHBOARD);
@@ -52,15 +53,17 @@ const App: React.FC = () => {
   // Effect to handle view changes based on auth state
   useEffect(() => {
     if (!authLoading) {
-      const adminViews: View[] = [View.WARGA, View.KELUARGA, View.IURAN];
+      const adminViews: View[] = [View.WARGA, View.KELUARGA, View.IURAN, View.PENGURUS];
       if (user && view === View.LOGIN) {
-        setView(View.WARGA); // Redirect to Warga Management page if logged in and on login page
+        setView(View.WARGA);
       } else if (!user && adminViews.includes(view)) {
-        setView(View.LOGIN); // Redirect to login if not logged in and trying to access admin area
+        setView(View.LOGIN);
+      } else if (user?.role !== 'ketua' && view === View.PENGURUS) {
+        alert('Anda tidak memiliki akses ke halaman ini.');
+        setView(View.WARGA);
       }
     }
   }, [user, view, authLoading]);
-
 
   const handleCreateWarga = async (warga: Omit<Warga, 'id' | 'created_at' | 'updated_at'>) => {
     try {
@@ -164,9 +167,8 @@ const App: React.FC = () => {
     }
   };
 
-
   const renderContent = () => {
-    const adminViews: View[] = [View.WARGA, View.KELUARGA, View.IURAN];
+    const adminViews: View[] = [View.WARGA, View.KELUARGA, View.IURAN, View.PENGURUS];
     
     if (isLoading || authLoading) { 
       return <div className="flex justify-center items-center h-64"><LoadingSpinner /></div>;
@@ -178,7 +180,7 @@ const App: React.FC = () => {
             <strong className="font-bold">Error!</strong>
             <span className="block sm:inline ml-2">{error}</span>
             <button onClick={() => { setError(null); fetchData(); }} className="absolute top-0 bottom-0 right-0 px-4 py-3">
-                <svg className="fill-current h-6 w-6 text-red-500" role="button" xmlns="http://www.w.org/2000/svg" viewBox="0 0 20 20"><title>Close</title><path d="M14.348 14.849a1.2 1.2 0 0 1-1.697 0L10 11.819l-2.651 3.029a1.2 1.2 0 1 1-1.697-1.697l2.758-3.15-2.759-3.152a1.2 1.2 0 1 1 1.697-1.697L10 8.183l2.651-3.031a1.2 1.2 0 1 1 1.697 1.697l-2.758 3.152 2.758 3.15a1.2 1.2 0 0 1 0 1.698z"/></svg>
+                <svg className="fill-current h-6 w-6 text-red-500" role="button" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"><title>Close</title><path d="M14.348 14.849a1.2 1.2 0 0 1-1.697 0L10 11.819l-2.651 3.029a1.2 1.2 0 1 1-1.697-1.697l2.758-3.15-2.759-3.152a1.2 1.2 0 1 1 1.697-1.697L10 8.183l2.651-3.031a1.2 1.2 0 1 1 1.697 1.697l-2.758 3.152 2.758 3.15a1.2 1.2 0 0 1 0 1.698z"/></svg>
             </button>
         </div>
       );
@@ -212,6 +214,7 @@ const App: React.FC = () => {
                             [View.WARGA]: <WargaList wargaList={wargaList} keluargaList={keluargaList} onCreate={handleCreateWarga} onUpdate={handleUpdateWarga} onDelete={handleDeleteWarga}/>,
                             [View.KELUARGA]: <KeluargaList keluargaList={keluargaList} onUpdate={handleUpdateKeluarga} onDelete={handleDeleteKeluarga}/>,
                             [View.IURAN]: <IuranList iuranList={iuranList} keluargaList={keluargaList} onCreate={handleCreateIuran} onUpdate={handleUpdateIuran} onDelete={handleDeleteIuran}/>,
+                            [View.PENGURUS]: <PengurusList />,
                         }[view]
                     }
                 </div>

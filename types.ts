@@ -22,10 +22,10 @@ export interface Warga {
   namaLengkap: string;
   jenisKelamin: 'L' | 'P';
   tempatLahir?: string;
-  tanggalLahir: string; // Made mandatory for age calculation
+  tanggalLahir: string;
   agama?: string;
   pendidikan?: string;
-  pekerjaan: string; // Made mandatory for dashboard stats
+  pekerjaan: string;
   statusPerkawinan?: string;
   statusDalamKeluarga?: string;
   kewarganegaraan?: string;
@@ -69,4 +69,5 @@ export enum View {
   WARGA = 'WARGA',
   KELUARGA = 'KELUARGA',
   IURAN = 'IURAN',
+  PENGURUS = 'PENGURUS', // View baru untuk manajemen pengurus
 }

@@ -1,9 +1,8 @@
 // services/geminiService.ts
 
-import { GoogleGenerativeAI } from "@google/generative-ai"; // Impor yang benar
+import { GoogleGenerativeAI } from "@google/generative-ai";
 import { Warga, Keluarga, Iuran } from '../types';
 
-// Menggunakan import.meta.env sesuai standar Vite untuk mengakses environment variable
 const API_KEY = import.meta.env.VITE_GEMINI_API_KEY;
 
 let genAI: GoogleGenerativeAI | null = null;
@@ -18,7 +17,8 @@ export const generatePopulationSummary = async (wargaList: Warga[], keluargaList
     return Promise.resolve("Fitur AI tidak aktif. Mohon konfigurasikan VITE_GEMINI_API_KEY di pengaturan deployment Anda.");
   }
   
-  const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash-latest' });
+  // FIX: Menggunakan nama model yang lebih stabil 'gemini-1.5-flash'
+  const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
   const currentPeriod = new Date().toISOString().slice(0, 7);
 
   const prompt = `
@@ -63,7 +63,6 @@ export const generatePopulationSummary = async (wargaList: Warga[], keluargaList
     const text = response.text();
     return text;
   } catch (error: any) {
-    // Menangkap dan menampilkan error yang lebih detail
     console.error("Error saat memanggil Gemini API:", error);
     let errorMessage = "Terjadi kesalahan saat membuat ringkasan AI. Silakan coba lagi.";
     if (error.message) {
@@ -71,7 +70,10 @@ export const generatePopulationSummary = async (wargaList: Warga[], keluargaList
         errorMessage = "Error dari AI: Kunci API tidak valid. Periksa kembali VITE_GEMINI_API_KEY Anda.";
       } else if (error.message.includes('billing')) {
          errorMessage = "Error dari AI: Masalah penagihan (billing) pada akun Google Cloud Anda. Pastikan billing sudah aktif.";
-      } else {
+      } else if (error.message.includes('404')) {
+         errorMessage = `Error dari AI: Model tidak ditemukan. Coba periksa nama model di kode.`;
+      }
+      else {
          errorMessage = `Error dari AI: ${error.message}`;
       }
     }

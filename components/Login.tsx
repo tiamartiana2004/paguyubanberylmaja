@@ -1,3 +1,5 @@
+// components/Login.tsx
+
 import React, { useState, useContext } from 'react';
 import { AuthContext } from '../contexts/AuthContext';
 import LoadingSpinner from './LoadingSpinner';
@@ -53,9 +55,6 @@ const Login: React.FC = () => {
             >
               {loading ? <LoadingSpinner /> : 'Login'}
             </button>
-          </div>
-           <div className="text-center text-xs text-gray-500 dark:text-gray-400">
-            <p>Hint: Coba `ketua`/`ketua123` atau `pengurus`/`pengurus123`.</p>
           </div>
         </form>
       </div>
