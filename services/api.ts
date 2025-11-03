@@ -2,17 +2,16 @@
 import { supabase } from './supabaseClient';
 import { Warga, Keluarga, Iuran, User } from '../types';
 
-// Helper untuk menangani error dari Supabase
+// Helper untuk menangani error dari Supabase secara konsisten
 const handleSupabaseError = ({ error, customMessage }: { error: any, customMessage: string }) => {
   if (error) {
     console.error(customMessage, error);
-    throw new Error(`${customMessage} (Error: ${error.message})`);
+    throw new Error(`${customMessage} (Pesan: ${error.message})`);
   }
 };
 
 // --- Data Mapping Helpers ---
-// Supabase menggunakan snake_case, aplikasi menggunakan camelCase.
-// Kita perlu konversi agar komponen tidak perlu diubah.
+// Mengonversi antara snake_case (database) dan camelCase (aplikasi)
 
 const toKeluargaApp = (db: any): Keluarga => ({
   id: db.id,
@@ -39,7 +38,7 @@ const toKeluargaDb = (app: any) => ({
   rw: app.rw,
   status_hunian: app.statusHunian,
   telepon: app.telepon,
-  updated_at: new Date().toISOString(), // Selalu update timestamp
+  updated_at: new Date().toISOString(),
 });
 
 const toWargaApp = (db: any): Warga => ({
@@ -104,25 +103,6 @@ const toIuranDb = (app: any) => ({
     updated_at: new Date().toISOString(),
 });
 
-// --- Auth API (Tetap Mock, tapi disarankan pindah ke Supabase Auth) ---
-const usersData: User[] = [
-    { id: 1, username: 'ketua', namaLengkap: 'Ketua Paguyuban', role: 'ketua' },
-    { id: 2, username: 'pengurus', namaLengkap: 'Pengurus Harian', role: 'pengurus' },
-];
-const userPasswords = { 'ketua': 'ketua123', 'pengurus': 'pengurus123' };
-
-export const login = (username: string, password: string): Promise<User> => {
-    return new Promise((resolve, reject) => {
-        setTimeout(() => {
-            const user = usersData.find(u => u.username === username);
-            if (user && userPasswords[username as keyof typeof userPasswords] === password) {
-                resolve(user);
-            } else {
-                reject(new Error("Username atau password salah."));
-            }
-        }, 500);
-    });
-};
 
 // --- Warga API ---
 export const getWarga = async (): Promise<Warga[]> => {
@@ -144,7 +124,6 @@ export const updateWarga = async (id: number, updates: Partial<Warga>): Promise<
 };
 
 export const deleteWarga = async (id: number): Promise<{ id: number }> => {
-    // Soft delete: set status_hidup to false
     const { error } = await supabase.from('warga').update({ status_hidup: false, updated_at: new Date().toISOString() }).eq('id', id);
     handleSupabaseError({ error, customMessage: 'Gagal menghapus data warga.' });
     return { id };
@@ -170,7 +149,6 @@ export const updateKeluarga = async (id: number, updates: Partial<Keluarga>): Pr
 };
 
 export const deleteKeluarga = async (id: number): Promise<{ id: number }> => {
-    // Menggunakan RPC yang sudah dibuat di SQL
     const { error } = await supabase.rpc('delete_keluarga_safe', { keluarga_id_to_delete: id });
     handleSupabaseError({ error, customMessage: 'Gagal menghapus keluarga.' });
     return { id };
@@ -200,3 +178,47 @@ export const deleteIuran = async (id: number): Promise<{ id: number }> => {
     handleSupabaseError({ error, customMessage: 'Gagal menghapus data iuran.' });
     return { id };
 };
+
+// --- PENGURUS / USER MANAGEMENT API ---
+
+/**
+ * Mengambil daftar semua pengurus dari tabel 'profiles'.
+ */
+export const getUsers = async (): Promise<User[]> => {
+  const { data, error } = await supabase.from('profiles').select('id, username, nama_lengkap, role');
+  
+  handleSupabaseError({ error, customMessage: "Gagal mengambil data pengurus." });
+
+  // Mapping data dari DB (snake_case) ke tipe User aplikasi (camelCase)
+  return data ? data.map(profile => ({
+    id: profile.id,
+    username: profile.username,
+    namaLengkap: profile.nama_lengkap,
+    role: profile.role as 'ketua' | 'pengurus'
+  })) : [];
+};
+
+/**
+ * Membuat pengurus baru dengan memanggil Supabase Edge Function 'create-user'.
+ * @param userData Objek berisi { email, password, nama_lengkap, role }
+ */
+export const createUser = async (userData: any) => {
+  // Panggil Edge Function yang sudah di-deploy
+  const { data, error } = await supabase.functions.invoke('create-user', {
+    body: userData,
+  });
+
+  if (error) {
+    console.error("Gagal membuat pengurus baru via Edge Function:", error);
+    // Coba berikan pesan error yang lebih user-friendly
+    const errorMessage = error.message.includes('unique constraint')
+      ? 'Email ini sudah terdaftar. Silakan gunakan email lain.'
+      : (error.message || "Terjadi kesalahan saat membuat pengurus baru.");
+    throw new Error(errorMessage);
+  }
+
+  return data;
+};
+
+// Catatan: Fungsi untuk Update dan Delete Pengurus juga akan memerlukan Edge Function
+// karena membutuhkan hak akses admin (`service_role_key`). Ini bisa ditambahkan di kemudian hari.

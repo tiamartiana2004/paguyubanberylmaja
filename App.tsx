@@ -15,7 +15,7 @@ import Login from './components/Login';
 import { AuthContext } from './contexts/AuthContext';
 import PublicWargaList from './components/PublicWargaList';
 import PublicIuran from './components/PublicIuran';
-import PengurusList from './components/PengurusList'; // IMPOR BARU
+import PengurusList from './components/PengurusList';
 
 const App: React.FC = () => {
   const [view, setView] = useState<View>(View.PUBLIC_DASHBOARD);
@@ -30,6 +30,7 @@ const App: React.FC = () => {
     setIsLoading(true);
     setError(null);
     try {
+      // Mengambil semua data utama aplikasi secara paralel
       const [wargaData, keluargaData, iuranData] = await Promise.all([
         api.getWarga(),
         api.getKeluarga(),
@@ -47,27 +48,36 @@ const App: React.FC = () => {
   }, []);
 
   useEffect(() => {
+    // Ambil data saat komponen pertama kali dimuat
     fetchData();
   }, [fetchData]);
 
-  // Effect to handle view changes based on auth state
+  // Effect untuk menangani navigasi berdasarkan status otentikasi
   useEffect(() => {
     if (!authLoading) {
       const adminViews: View[] = [View.WARGA, View.KELUARGA, View.IURAN, View.PENGURUS];
+      
+      // Jika user sudah login tapi masih di halaman login, redirect ke halaman admin
       if (user && view === View.LOGIN) {
         setView(View.WARGA);
-      } else if (!user && adminViews.includes(view)) {
+      } 
+      // Jika user belum login tapi mencoba akses halaman admin, redirect ke login
+      else if (!user && adminViews.includes(view)) {
         setView(View.LOGIN);
-      } else if (user?.role !== 'ketua' && view === View.PENGURUS) {
+      } 
+      // Jika user bukan 'ketua' tapi mencoba akses halaman manajemen pengurus, redirect
+      else if (user?.role !== 'ketua' && view === View.PENGURUS) {
         alert('Anda tidak memiliki akses ke halaman ini.');
         setView(View.WARGA);
       }
     }
   }, [user, view, authLoading]);
 
+
   const handleCreateWarga = async (warga: Omit<Warga, 'id' | 'created_at' | 'updated_at'>) => {
     try {
       await api.createWarga(warga);
+      // Data akan di-refresh setelah form ditutup di WargaList
     } catch (err) {
       throw new Error('Gagal membuat data warga.');
     }
@@ -170,10 +180,16 @@ const App: React.FC = () => {
   const renderContent = () => {
     const adminViews: View[] = [View.WARGA, View.KELUARGA, View.IURAN, View.PENGURUS];
     
+    // Tampilkan loading spinner jika data utama atau status otentikasi sedang dimuat
     if (isLoading || authLoading) { 
-      return <div className="flex justify-center items-center h-64"><LoadingSpinner /></div>;
+      return (
+        <div className="flex justify-center items-center h-64">
+          <LoadingSpinner />
+        </div>
+      );
     }
 
+    // Tampilkan pesan error jika ada
     if (error) {
       return (
         <div className="text-center p-4 bg-red-100 dark:bg-red-900 border border-red-400 text-red-700 dark:text-red-200 rounded relative" role="alert">
@@ -186,7 +202,7 @@ const App: React.FC = () => {
       );
     }
     
-    // Public Views
+    // Render Halaman Publik
     if (view === View.PUBLIC_DASHBOARD) {
         return <Dashboard wargaList={wargaList} keluargaList={keluargaList} iuranList={iuranList}/>;
     }
@@ -200,21 +216,22 @@ const App: React.FC = () => {
         return <PublicIuran iuranList={iuranList} keluargaList={keluargaList} />;
     }
     
-    // Auth and Admin Views
+    // Render Halaman Login
     if(view === View.LOGIN) {
         return <Login />;
     }
     
+    // Render Halaman Admin jika user sudah login
     if(user && adminViews.includes(view)) {
         return (
             <AdminLayout currentView={view} setView={setView}>
-                 <div className="relative">
+                <div className="relative">
                     {
                         {
-                            [View.WARGA]: <WargaList wargaList={wargaList} keluargaList={keluargaList} onCreate={handleCreateWarga} onUpdate={handleUpdateWarga} onDelete={handleDeleteWarga}/>,
+                            [View.WARGA]: <WargaList wargaList={wargaList} keluargaList={keluargaList} onUpdate={handleUpdateWarga} onDelete={handleDeleteWarga} onDataChange={fetchData} />,
                             [View.KELUARGA]: <KeluargaList keluargaList={keluargaList} onUpdate={handleUpdateKeluarga} onDelete={handleDeleteKeluarga}/>,
-                            [View.IURAN]: <IuranList iuranList={iuranList} keluargaList={keluargaList} onCreate={handleCreateIuran} onUpdate={handleUpdateIuran} onDelete={handleDeleteIuran}/>,
-                            [View.PENGURUS]: <PengurusList />,
+                            [View.IURAN]: <IuranList iuranList={iuranList} keluargaList={keluargaList} onUpdate={handleUpdateIuran} onDelete={handleDeleteIuran} onDataChange={fetchData}/>,
+                            [View.PENGURUS]: <PengurusList />, // PengurusList kini me-manage datanya sendiri
                         }[view]
                     }
                 </div>
@@ -222,6 +239,7 @@ const App: React.FC = () => {
         )
     }
 
+    // Fallback jika tidak ada view yang cocok
     return <div className="text-center py-10">Silakan pilih menu di atas untuk memulai.</div>;
   };
 

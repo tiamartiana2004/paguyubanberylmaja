@@ -19,6 +19,11 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children, currentView, setVie
     { view: View.KELUARGA, label: 'Data Keluarga', icon: '🏠' },
     { view: View.IURAN, label: 'Data Iuran', icon: '💰' },
   ];
+  
+  // Navigasi khusus yang hanya bisa diakses oleh 'ketua'
+  const ketuaNavItems = [
+    { view: View.PENGURUS, label: 'Manajemen Pengurus', icon: '🛡️' },
+  ];
 
   const getButtonClass = (view: View) => {
     const baseClass = "flex items-center space-x-2 px-3 py-2 rounded-md text-sm font-medium transition-colors duration-200 flex-shrink-0";
@@ -32,10 +37,16 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children, currentView, setVie
     <div className="space-y-6">
       <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-4">
         <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
-            {/* Navigasi Admin dibuat scrollable di mobile */}
             <div className="w-full sm:w-auto overflow-x-auto">
                 <div className="flex items-center space-x-2 sm:space-x-4 pb-2 sm:pb-0">
                   {navItems.map(item => (
+                    <button key={item.view} onClick={() => setView(item.view)} className={getButtonClass(item.view)}>
+                      <span>{item.icon}</span>
+                      <span className="whitespace-nowrap">{item.label}</span>
+                    </button>
+                  ))}
+                  {/* Tampilkan menu khusus jika role adalah 'ketua' */}
+                  {user?.role === 'ketua' && ketuaNavItems.map(item => (
                     <button key={item.view} onClick={() => setView(item.view)} className={getButtonClass(item.view)}>
                       <span>{item.icon}</span>
                       <span className="whitespace-nowrap">{item.label}</span>

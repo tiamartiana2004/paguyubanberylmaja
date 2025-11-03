@@ -48,9 +48,16 @@ export interface Iuran {
   updated_at: string;
 }
 
+/**
+ * Interface User yang diperbarui untuk Supabase Auth.
+ * id: Merupakan UUID dari tabel auth.users, formatnya adalah string.
+ * username: Kita akan gunakan email pengguna sebagai username untuk login dan tampilan.
+ * namaLengkap: Disimpan di tabel 'profiles' kita.
+ * role: Disimpan di tabel 'profiles' kita.
+ */
 export interface User {
-  id: number;
-  username: string;
+  id: string; // <-- Diubah dari number menjadi string
+  username: string; // <-- Merepresentasikan email pengguna
   namaLengkap: string;
   role: 'ketua' | 'pengurus';
 }
@@ -69,5 +76,5 @@ export enum View {
   WARGA = 'WARGA',
   KELUARGA = 'KELUARGA',
   IURAN = 'IURAN',
-  PENGURUS = 'PENGURUS', // View baru untuk manajemen pengurus
+  PENGURUS = 'PENGURUS',
 }

@@ -5,7 +5,7 @@ import { AuthContext } from '../contexts/AuthContext';
 import LoadingSpinner from './LoadingSpinner';
 
 const Login: React.FC = () => {
-  const [username, setUsername] = useState('');
+  const [email, setEmail] = useState(''); // Diubah dari username menjadi email
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
   const { login, loading } = useContext(AuthContext);
@@ -14,10 +14,16 @@ const Login: React.FC = () => {
     e.preventDefault();
     setError(null);
     try {
-      await login(username, password);
-      // App component will handle redirection
+      // Sekarang memanggil fungsi login dengan email dan password
+      await login(email, password);
+      // Komponen App akan menangani pengalihan (redirection) setelah login berhasil
     } catch (err) {
-      setError((err as Error).message || 'Login failed.');
+      const errorMessage = (err as Error).message;
+      if (errorMessage.includes('Invalid login credentials')) {
+        setError('Email atau password salah. Silakan coba lagi.');
+      } else {
+        setError(errorMessage || 'Terjadi kesalahan saat login.');
+      }
     }
   };
 
@@ -27,12 +33,13 @@ const Login: React.FC = () => {
         <h2 className="text-2xl font-bold text-center text-gray-900 dark:text-white mb-6">Login Area Pengurus</h2>
         <form onSubmit={handleSubmit} className="space-y-6">
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Username</label>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Email</label>
             <input
-              type="text"
-              value={username}
-              onChange={(e) => setUsername(e.target.value)}
+              type="email" // Tipe input diubah menjadi email
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
               required
+              autoComplete="email"
               className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm dark:bg-gray-700 dark:border-gray-600"
             />
           </div>
@@ -43,10 +50,11 @@ const Login: React.FC = () => {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
+              autoComplete="current-password"
               className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm dark:bg-gray-700 dark:border-gray-600"
             />
           </div>
-          {error && <p className="text-red-500 text-sm">{error}</p>}
+          {error && <p className="text-red-500 text-sm text-center">{error}</p>}
           <div>
             <button
               type="submit"
