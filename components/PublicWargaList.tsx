@@ -1,10 +1,9 @@
+// components/PublicWargaList.tsx
+
 import React, { useMemo, useState } from 'react';
 import { Keluarga, Warga } from '../types';
 
-interface PublicWargaListProps {
-  wargaList: Warga[];
-  keluargaList: Keluarga[];
-}
+// ... (Komponen WhatsAppIcon tetap sama) ...
 
 const WhatsAppIcon = () => (
     <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
@@ -12,7 +11,9 @@ const WhatsAppIcon = () => (
     </svg>
 );
 
-const formatPhoneNumberForWhatsApp = (phone: string) => {
+
+const formatPhoneNumberForWhatsApp = (phone?: string) => {
+    if (!phone) return '';
     let cleaned = phone.replace(/\D/g, '');
     if (cleaned.startsWith('0')) {
         cleaned = '62' + cleaned.substring(1);
@@ -20,13 +21,33 @@ const formatPhoneNumberForWhatsApp = (phone: string) => {
     return cleaned;
 };
 
-const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('id-ID', {
-        year: 'numeric',
-        month: 'long',
-        day: 'numeric'
-    });
+// FUNGSI BARU yang lebih aman
+const timeAgo = (dateString: string): string => {
+    if (!dateString) return "-";
+    const date = new Date(dateString);
+    if (isNaN(date.getTime())) return "-"; // Handle invalid date format
+
+    const now = new Date();
+    const seconds = Math.floor((now.getTime() - date.getTime()) / 1000);
+
+    let interval = seconds / 31536000;
+    if (interval > 1) return Math.floor(interval) + " tahun lalu";
+    interval = seconds / 2592000;
+    if (interval > 1) return Math.floor(interval) + " bulan lalu";
+    interval = seconds / 86400;
+    if (interval > 1) return Math.floor(interval) + " hari lalu";
+    interval = seconds / 3600;
+    if (interval > 1) return Math.floor(interval) + " jam lalu";
+    interval = seconds / 60;
+    if (interval > 1) return Math.floor(interval) + " menit lalu";
+    return "beberapa saat lalu";
 };
+
+
+interface PublicWargaListProps {
+  wargaList: Warga[];
+  keluargaList: Keluarga[];
+}
 
 
 const PublicWargaList: React.FC<PublicWargaListProps> = ({ wargaList, keluargaList }) => {
@@ -51,7 +72,8 @@ const PublicWargaList: React.FC<PublicWargaListProps> = ({ wargaList, keluargaLi
         keluarga.kepalaKeluarga.toLowerCase().includes(searchTerm.toLowerCase()) ||
         keluarga.blok.toLowerCase().includes(searchTerm.toLowerCase()) ||
         keluarga.nomorRumah.toLowerCase().includes(searchTerm.toLowerCase())
-      );
+      )
+      .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()); // Urutkan dari yang terbaru
   }, [wargaList, keluargaList, searchTerm]);
 
   return (
@@ -73,7 +95,7 @@ const PublicWargaList: React.FC<PublicWargaListProps> = ({ wargaList, keluargaLi
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {familiesWithMembers.map(keluarga => (
-          <div key={keluarga.id} className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 flex flex-col">
+          <div key={keluarga.id} className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 flex flex-col transition-all duration-300 hover:shadow-xl hover:-translate-y-1">
             <div className="flex justify-between items-start mb-2">
                 <div>
                     <h2 className="text-xl font-bold text-gray-900 dark:text-white">{keluarga.kepalaKeluarga}</h2>
@@ -92,8 +114,9 @@ const PublicWargaList: React.FC<PublicWargaListProps> = ({ wargaList, keluargaLi
                     </a>
                 )}
             </div>
+             {/* Menggunakan fungsi timeAgo yang baru */}
              <p className="text-xs text-gray-400 dark:text-gray-500 mb-4">
-                Bergabung sejak: {formatDate(keluarga.createdAt)}
+                Bergabung sejak: <span className="font-semibold">{timeAgo(keluarga.created_at)}</span>
             </p>
             <div className="flex-grow">
               <h3 className="font-semibold mb-2 text-gray-700 dark:text-gray-300">Anggota Keluarga:</h3>
@@ -101,7 +124,7 @@ const PublicWargaList: React.FC<PublicWargaListProps> = ({ wargaList, keluargaLi
                 {keluarga.anggota.map(warga => (
                   <li key={warga.id}>
                     {warga.namaLengkap}
-                    <span className="text-xs text-gray-500"> ({warga.statusDalamKeluarga})</span>
+                    {warga.statusDalamKeluarga && <span className="text-xs text-gray-500"> ({warga.statusDalamKeluarga})</span>}
                   </li>
                 ))}
               </ul>

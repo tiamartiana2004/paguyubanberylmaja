@@ -1,24 +1,24 @@
 // services/geminiService.ts
 
-import { GoogleGenAI } from "@google/genai";
+import { GoogleGenerativeAI } from "@google/generative-ai"; // Impor yang benar
 import { Warga, Keluarga, Iuran } from '../types';
 
 // Menggunakan import.meta.env sesuai standar Vite untuk mengakses environment variable
 const API_KEY = import.meta.env.VITE_GEMINI_API_KEY;
 
-if (!API_KEY) {
-  console.warn("API_KEY for Gemini is not set. AI features will be disabled.");
+let genAI: GoogleGenerativeAI | null = null;
+if (API_KEY) {
+  genAI = new GoogleGenerativeAI(API_KEY);
+} else {
+  console.warn("VITE_GEMINI_API_KEY tidak ditemukan di environment variables. Fitur AI akan dinonaktifkan.");
 }
 
-// Inisialisasi klien GenAI hanya jika API_KEY ada
-const ai = API_KEY ? new GoogleGenAI({ apiKey: API_KEY }) : null;
-
 export const generatePopulationSummary = async (wargaList: Warga[], keluargaList: Keluarga[], iuranList: Iuran[]): Promise<string> => {
-  if (!ai) {
-    return Promise.resolve("Fitur AI tidak aktif. Mohon konfigurasikan VITE_GEMINI_API_KEY di file .env.local Anda.");
+  if (!genAI) {
+    return Promise.resolve("Fitur AI tidak aktif. Mohon konfigurasikan VITE_GEMINI_API_KEY di pengaturan deployment Anda.");
   }
   
-  const model = 'gemini-1.5-flash'; // Menggunakan model terbaru yang efisien
+  const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash-latest' });
   const currentPeriod = new Date().toISOString().slice(0, 7);
 
   const prompt = `
@@ -58,13 +58,23 @@ export const generatePopulationSummary = async (wargaList: Warga[], keluargaList
   `;
 
   try {
-    const response = await ai.models.generateContent({
-      model: model,
-      contents: [{ role: "user", parts: [{ text: prompt }] }],
-    });
-    return response.text;
-  } catch (error) {
-    console.error("Error calling Gemini API:", error);
-    return "Terjadi kesalahan saat membuat ringkasan AI. Silakan coba lagi.";
+    const result = await model.generateContent(prompt);
+    const response = await result.response;
+    const text = response.text();
+    return text;
+  } catch (error: any) {
+    // Menangkap dan menampilkan error yang lebih detail
+    console.error("Error saat memanggil Gemini API:", error);
+    let errorMessage = "Terjadi kesalahan saat membuat ringkasan AI. Silakan coba lagi.";
+    if (error.message) {
+      if (error.message.includes('API key not valid')) {
+        errorMessage = "Error dari AI: Kunci API tidak valid. Periksa kembali VITE_GEMINI_API_KEY Anda.";
+      } else if (error.message.includes('billing')) {
+         errorMessage = "Error dari AI: Masalah penagihan (billing) pada akun Google Cloud Anda. Pastikan billing sudah aktif.";
+      } else {
+         errorMessage = `Error dari AI: ${error.message}`;
+      }
+    }
+    return errorMessage;
   }
 };

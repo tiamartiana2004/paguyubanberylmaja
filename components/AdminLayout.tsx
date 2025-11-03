@@ -1,5 +1,8 @@
-import React, { ReactNode, useContext } from 'react';
-import { View, User } from '../types';
+// components/AdminLayout.tsx
+
+import React, { ReactNode } from 'react';
+import { View } from '../types';
+import { useContext } from 'react';
 import { AuthContext } from '../contexts/AuthContext';
 
 interface AdminLayoutProps {
@@ -9,7 +12,7 @@ interface AdminLayoutProps {
 }
 
 const AdminLayout: React.FC<AdminLayoutProps> = ({ children, currentView, setView }) => {
-  const { user, logout } = useContext(AuthContext);
+  const { user } = useContext(AuthContext);
 
   const navItems = [
     { view: View.WARGA, label: 'Data Warga', icon: '👥' },
@@ -18,7 +21,7 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children, currentView, setVie
   ];
 
   const getButtonClass = (view: View) => {
-    const baseClass = "flex items-center space-x-2 px-3 py-2 rounded-md text-sm font-medium transition-colors duration-200";
+    const baseClass = "flex items-center space-x-2 px-3 py-2 rounded-md text-sm font-medium transition-colors duration-200 flex-shrink-0";
     if (currentView === view) {
       return `${baseClass} bg-blue-500 text-white shadow-sm`;
     }
@@ -29,16 +32,19 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children, currentView, setVie
     <div className="space-y-6">
       <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-4">
         <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
-            <div className="flex items-center space-x-2 sm:space-x-4 overflow-x-auto">
-              {navItems.map(item => (
-                <button key={item.view} onClick={() => setView(item.view)} className={getButtonClass(item.view)}>
-                  <span>{item.icon}</span>
-                  <span className="whitespace-nowrap">{item.label}</span>
-                </button>
-              ))}
+            {/* Navigasi Admin dibuat scrollable di mobile */}
+            <div className="w-full sm:w-auto overflow-x-auto">
+                <div className="flex items-center space-x-2 sm:space-x-4 pb-2 sm:pb-0">
+                  {navItems.map(item => (
+                    <button key={item.view} onClick={() => setView(item.view)} className={getButtonClass(item.view)}>
+                      <span>{item.icon}</span>
+                      <span className="whitespace-nowrap">{item.label}</span>
+                    </button>
+                  ))}
+                </div>
             </div>
             {user && (
-                <div className="text-right text-sm">
+                <div className="text-right text-sm self-end sm:self-center">
                     <p className="font-semibold text-gray-800 dark:text-gray-200">Selamat datang, {user.namaLengkap}</p>
                     <p className="text-xs text-gray-500 dark:text-gray-400 capitalize">Peran: {user.role}</p>
                 </div>
