@@ -37,7 +37,7 @@ const WargaForm: React.FC<WargaFormProps> = ({ wargaToEdit, keluargaList, onSave
       setFormData({
         ...initialFormState, // Start with a clean slate to avoid carrying over optional fields
         ...wargaToEdit,
-        tanggalLahir: wargaToEdit.tanggalLahir ? wargaToEdit.tanggalLahir.slice(0, 10) : ''
+        tanggalLahir: wargaToEdit.tanggalLahir || ''
       });
     } else {
       setFormData(initialFormState);
@@ -89,7 +89,7 @@ const WargaForm: React.FC<WargaFormProps> = ({ wargaToEdit, keluargaList, onSave
             </div>
             <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Tanggal Lahir</label>
-                <input type="date" name="tanggalLahir" value={formData.tanggalLahir ? formData.tanggalLahir.slice(0, 10) : ''} onChange={handleChange} required className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm dark:bg-gray-700 dark:border-gray-600"/>
+                <input type="date" name="tanggalLahir" value={formData.tanggalLahir} onChange={handleChange} required className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm dark:bg-gray-700 dark:border-gray-600"/>
             </div>
             <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Pekerjaan</label>
