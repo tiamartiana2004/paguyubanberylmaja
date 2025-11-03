@@ -1,0 +1,5 @@
+{
+  "name": "Aplikasi Kependudukan",
+  "description": "An application to manage residential population data, including residents and families, with AI-powered reporting features.",
+  "requestFramePermissions": []
+}
